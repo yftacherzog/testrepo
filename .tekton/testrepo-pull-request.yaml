@@ -11,7 +11,8 @@ metadata:
     pipelinesascode.tekton.dev/task: >-
       [
       tasks/buildah/2.0/buildah.yaml,
-      tasks/show-sbom/2.0/show-sbom.yaml
+      tasks/show-sbom/2.0/show-sbom.yaml,
+      tasks/init/0.2/init.yaml
       ]
   creationTimestamp: null
   labels:
@@ -133,6 +134,17 @@ spec:
       name: JAVA_COMMUNITY_DEPENDENCIES
       value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
     tasks:
+    - name: init
+      params:
+      - name: image-url
+        value: quay.io/yftacherzog/konflux-ci-user2:e59415ea110af38d8337f9e2179da2094769c24cec0aae5e50695f18c27375c7
+      - name: rebuild
+        value: "false"
+      - name: skip-checks
+        value: "true"
+      taskRef:
+        name: init
+        kind: Task
     - name: clone-repository
       params:
       - name: url

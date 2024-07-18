@@ -17,14 +17,14 @@ metadata:
   namespace: user-ns2
 spec:
   params:
-  - name: dockerfile
-    value: Dockerfile
   - name: git-url
     value: '{{source_url}}'
-  - name: output-image
-    value: quay.io/yftacherzog-konflux/user-ns2/my-test-component/testrepo:{{revision}}
   - name: revision
     value: '{{revision}}'
+  - name: output-image
+    value: quay.io/yftacherzog-konflux/user-ns2/my-test-component/testrepo:{{revision}}
+  - name: dockerfile
+    value: Dockerfile
   pipelineSpec:
     finally:
     - name: show-sbom

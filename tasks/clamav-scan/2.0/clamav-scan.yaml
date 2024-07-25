@@ -41,9 +41,6 @@ spec:
       # https://bugzilla.redhat.com/show_bug.cgi?id=1969929
       securityContext:
         runAsUser: 1000
-        capabilities:
-          add:
-            - SETFCAP
       env:
         - name: HOME
           value: /work
@@ -62,13 +59,6 @@ spec:
         set -euo pipefail
         . /utils.sh
         trap 'handle_error' EXIT
-
-        ca_bundle=/mnt/trusted-ca/ca-bundle.crt
-        if [ -f "$ca_bundle" ]; then
-          echo "INFO: Using mounted CA bundle: $ca_bundle"
-          cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-          update-ca-trust
-        fi
 
         imagewithouttag=$(echo $IMAGE_URL | sed "s/\(.*\):.*/\1/" | tr -d '\n')
 
@@ -160,8 +150,8 @@ spec:
         - mountPath: /work
           name: work
         - name: trusted-ca
-          mountPath: /mnt/trusted-ca
-          readOnly: true
+          mountPath: /etc/ssl/certs
+          # readOnly: true
     - name: upload
       image: quay.io/konflux-ci/oras:latest@sha256:1619b84cea3777387f643d7a1ecde98dd10904439f31607e66530cd2299c7b91
       env:

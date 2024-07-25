@@ -39,8 +39,11 @@ spec:
     volumeMounts:
       - mountPath: /shared
         name: shared
+      # - name: trusted-ca
+      #   mountPath: /mnt/trusted-ca
+      #   readOnly: true
       - name: trusted-ca
-        mountPath: /mnt/trusted-ca
+        mountPath: /etc/ssl/certs
         readOnly: true
     env:
       - name: IMAGE_URL
@@ -52,12 +55,12 @@ spec:
       set -euo pipefail
       source /utils.sh
 
-      ca_bundle=/mnt/trusted-ca/ca-bundle.crt
-      if [ -f "$ca_bundle" ]; then
-        echo "INFO: Using mounted CA bundle: $ca_bundle"
-        cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-        update-ca-trust
-      fi
+      # ca_bundle=/mnt/trusted-ca/ca-bundle.crt
+      # if [ -f "$ca_bundle" ]; then
+      #   echo "INFO: Using mounted CA bundle: $ca_bundle"
+      #   cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
+      #   update-ca-trust
+      # fi
 
       trap 'handle_error $(results.TEST_OUTPUT.path)' EXIT
 

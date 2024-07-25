@@ -52,12 +52,12 @@ spec:
         set -euo pipefail
         . /utils.sh
 
-        ca_bundle=/mnt/trusted-ca/ca-bundle.crt
-        if [ -f "$ca_bundle" ]; then
-          echo "INFO: Using mounted CA bundle: $ca_bundle"
-          cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-          update-ca-trust
-        fi
+        # ca_bundle=/mnt/trusted-ca/ca-bundle.crt
+        # if [ -f "$ca_bundle" ]; then
+        #   echo "INFO: Using mounted CA bundle: $ca_bundle"
+        #   cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
+        #   update-ca-trust
+        # fi
 
         imagewithouttag=$(echo -n $IMAGE_URL | sed "s/\(.*\):.*/\1/")
         # strip new-line escape symbol from parameter and save it to variable
@@ -72,8 +72,11 @@ spec:
           done
         fi
       volumeMounts:
+      # - name: trusted-ca
+      #   mountPath: /mnt/trusted-ca
+      #   readOnly: true
       - name: trusted-ca
-        mountPath: /mnt/trusted-ca
+        mountPath: /etc/ssl/certs
         readOnly: true
     - name: get-vulnerabilities
       image: quay.io/redhat-appstudio/clair-in-ci:v1  # explicit floating tag, daily updates, per arch call this is exempt for now for use of image digest
@@ -86,12 +89,12 @@ spec:
       script: |
         #!/usr/bin/env bash
 
-        ca_bundle=/mnt/trusted-ca/ca-bundle.crt
-        if [ -f "$ca_bundle" ]; then
-          echo "INFO: Using mounted CA bundle: $ca_bundle"
-          cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-          update-ca-trust
-        fi
+        # ca_bundle=/mnt/trusted-ca/ca-bundle.crt
+        # if [ -f "$ca_bundle" ]; then
+        #   echo "INFO: Using mounted CA bundle: $ca_bundle"
+        #   cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
+        #   update-ca-trust
+        # fi
 
         imagewithouttag=$(echo -n $IMAGE_URL | sed "s/\(.*\):.*/\1/")
         images_processed_template='{"image": {"pullspec": "'"$IMAGE_URL"'", "digests": [%s]}}'
@@ -117,8 +120,11 @@ spec:
         images_processed=$(echo "${images_processed_template/\[%s]/[$digests_processed_string]}")
         echo "$images_processed" > /tekton/home/images-processed.json
       volumeMounts:
+      # - name: trusted-ca
+      #   mountPath: /mnt/trusted-ca
+      #   readOnly: true
       - name: trusted-ca
-        mountPath: /mnt/trusted-ca
+        mountPath: /etc/ssl/certs
         readOnly: true
     - name: conftest-vulnerabilities
       image: quay.io/redhat-appstudio/konflux-test:v1.4.3@sha256:75d3e0ada1d07511e6b9342398929fe2690367b33142bf99ecad7dc3bccc3847

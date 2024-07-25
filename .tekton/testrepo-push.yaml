@@ -15,7 +15,9 @@ metadata:
       tasks/clair-scan/2.0/clair-scan.yaml,
       tasks/deprecated-image-check/2.0/deprecated-image-check.yaml,
       tasks/sbom-json-check/2.0/sbom-json-check.yaml,
-      tasks/clamav-scan/2.0/clamav-scan.yaml
+      tasks/clamav-scan/2.0/clamav-scan.yaml,
+      tasks/apply-tags/2.0/apply-tags.yaml,
+      tasks/ecosystem-cert-preflight-checks/2.0/ecosystem-cert-preflight-checks.yaml
       ]
   creationTimestamp: null
   labels:
@@ -162,8 +164,6 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
-      - name: caTrustConfigMapName
-        value: "does-not-exist"
       runAfter:
       - init
       taskRef:
@@ -310,14 +310,8 @@ spec:
       runAfter:
       - build-container
       taskRef:
-        params:
-        - name: name
-          value: ecosystem-cert-preflight-checks
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-ecosystem-cert-preflight-checks:0.1@sha256:d56dc78e0699771ef6960eef1618b8068bd1b32557a8eed118453b0316772d7d
-        - name: kind
-          value: task
-        resolver: bundles
+        name: ecosystem-cert-preflight-checks
+        kind: Task
       when:
       - input: $(params.skip-checks)
         operator: in
@@ -382,14 +376,8 @@ spec:
       runAfter:
       - build-container
       taskRef:
-        params:
-        - name: name
-          value: apply-tags
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1@sha256:175162b0a1c55e911d0d25ddef97e90932b5043f0b523cf83ed4824363840d74
-        - name: kind
-          value: task
-        resolver: bundles
+        name: apply-tags
+        kind: Task
     workspaces:
     - name: workspace
     - name: git-auth

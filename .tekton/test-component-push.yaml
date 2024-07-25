@@ -22,7 +22,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/yftacherzog/konflux-ci-user2:{{revision}}
+    value: registry-service.kind-registry/test-component:{{revision}}
   - name: dockerfile
     value: Dockerfile
   - name: path-context

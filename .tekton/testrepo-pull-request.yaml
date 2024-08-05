@@ -8,11 +8,6 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
       == "main"
-    pipelinesascode.tekton.dev/task: >-
-      [
-      tasks/buildah/2.0/buildah.yaml,
-      tasks/show-sbom/2.0/show-sbom.yaml
-      ]
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: test-component
@@ -41,8 +36,14 @@ spec:
       - name: IMAGE_URL
         value: $(tasks.build-container.results.IMAGE_URL)
       taskRef:
-        name: show-sbom
-        kind: Task
+        params:
+        - name: name
+          value: show-sbom
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-show-sbom:0.1@sha256:8e0f8cad75e6f674d72a874385b69c4651afc0c9dcc59feffe0d85844687d852
+        - name: kind
+          value: task
+        resolver: bundles
     - name: show-summary
       params:
       - name: pipelinerun-name
@@ -195,8 +196,14 @@ spec:
       runAfter:
       - prefetch-dependencies
       taskRef:
-        name: buildah
-        kind: Task
+        params:
+        - name: name
+          value: buildah
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.2@sha256:6b60c1130ec0df69faa82dccbc207273936a41af5ee663c736d2977580e88626
+        - name: kind
+          value: task
+        resolver: bundles
       workspaces:
       - name: source
         workspace: workspace

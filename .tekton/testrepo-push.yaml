@@ -10,8 +10,6 @@ metadata:
       == "main"
     pipelinesascode.tekton.dev/task: >-
       [
-      tasks/buildah/2.0/buildah.yaml,
-      tasks/show-sbom/2.0/show-sbom.yaml,
       tasks/clair-scan/2.0/clair-scan.yaml,
       tasks/deprecated-image-check/2.0/deprecated-image-check.yaml,
       tasks/sbom-json-check/2.0/sbom-json-check.yaml,
@@ -43,8 +41,14 @@ spec:
       - name: IMAGE_URL
         value: $(tasks.build-container.results.IMAGE_URL)
       taskRef:
-        name: show-sbom
-        kind: Task
+        params:
+        - name: name
+          value: show-sbom
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-show-sbom:0.1@sha256:8e0f8cad75e6f674d72a874385b69c4651afc0c9dcc59feffe0d85844687d852
+        - name: kind
+          value: task
+        resolver: bundles
     - name: show-summary
       params:
       - name: pipelinerun-name
@@ -234,8 +238,14 @@ spec:
       runAfter:
       - prefetch-dependencies
       taskRef:
-        name: buildah
-        kind: Task
+        params:
+        - name: name
+          value: buildah
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.2@sha256:808be6da05864bf123a3cdaaab72701d08b27032804ed8df65e86ca0949e417c
+        - name: kind
+          value: task
+        resolver: bundles
       when:
       - input: $(tasks.init.results.build)
         operator: in

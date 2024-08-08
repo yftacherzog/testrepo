@@ -19,11 +19,11 @@ spec:
     - name: docker-auth
       description: unused, should be removed in next task version.
       default: ""
-    - name: caTrustConfigMapName
+    - name: ca-trust-config-map-name
       type: string
       description: The name of the ConfigMap to read CA bundle data from.
       default: trusted-ca
-    - name: caTrustConfigMapKey
+    - name: ca-trust-config-map-key
       type: string
       description: The name of the key in the ConfigMap that contains the CA bundle data.
       default: ca-bundle.crt
@@ -36,7 +36,7 @@ spec:
       description: Images processed in the task.
   steps:
     - name: get-image-manifests
-      image: quay.io/redhat-appstudio/konflux-test:v1.4.3@sha256:75d3e0ada1d07511e6b9342398929fe2690367b33142bf99ecad7dc3bccc3847
+      image: quay.io/redhat-appstudio/konflux-test:v1.4.5@sha256:801a105ba0f9c7f58f5ba5cde1a3b4404009fbebb1028779ca2c5de211e94940
       # the clair-in-ci image neither has skopeo or jq installed. Hence, we create an extra step to get the image manifest digests
       env:
         - name: IMAGE_URL
@@ -52,13 +52,6 @@ spec:
         set -euo pipefail
         . /utils.sh
 
-        # ca_bundle=/mnt/trusted-ca/ca-bundle.crt
-        # if [ -f "$ca_bundle" ]; then
-        #   echo "INFO: Using mounted CA bundle: $ca_bundle"
-        #   cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-        #   update-ca-trust
-        # fi
-
         imagewithouttag=$(echo -n $IMAGE_URL | sed "s/\(.*\):.*/\1/")
         # strip new-line escape symbol from parameter and save it to variable
         imageanddigest=$(echo $imagewithouttag@$IMAGE_DIGEST)
@@ -72,11 +65,9 @@ spec:
           done
         fi
       volumeMounts:
-      # - name: trusted-ca
-      #   mountPath: /mnt/trusted-ca
-      #   readOnly: true
       - name: trusted-ca
-        mountPath: /etc/ssl/certs
+        mountPath: /etc/pki/tls/certs/ca-custom-bundle.crt
+        subPath: ca-bundle.crt
         readOnly: true
     - name: get-vulnerabilities
       image: quay.io/redhat-appstudio/clair-in-ci:v1  # explicit floating tag, daily updates, per arch call this is exempt for now for use of image digest
@@ -88,13 +79,6 @@ spec:
           value: $(params.image-digest)
       script: |
         #!/usr/bin/env bash
-
-        # ca_bundle=/mnt/trusted-ca/ca-bundle.crt
-        # if [ -f "$ca_bundle" ]; then
-        #   echo "INFO: Using mounted CA bundle: $ca_bundle"
-        #   cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-        #   update-ca-trust
-        # fi
 
         imagewithouttag=$(echo -n $IMAGE_URL | sed "s/\(.*\):.*/\1/")
         images_processed_template='{"image": {"pullspec": "'"$IMAGE_URL"'", "digests": [%s]}}'
@@ -120,14 +104,12 @@ spec:
         images_processed=$(echo "${images_processed_template/\[%s]/[$digests_processed_string]}")
         echo "$images_processed" > /tekton/home/images-processed.json
       volumeMounts:
-      # - name: trusted-ca
-      #   mountPath: /mnt/trusted-ca
-      #   readOnly: true
       - name: trusted-ca
-        mountPath: /etc/ssl/certs
+        mountPath: /etc/pki/tls/certs/ca-custom-bundle.crt
+        subPath: ca-bundle.crt
         readOnly: true
     - name: conftest-vulnerabilities
-      image: quay.io/redhat-appstudio/konflux-test:v1.4.3@sha256:75d3e0ada1d07511e6b9342398929fe2690367b33142bf99ecad7dc3bccc3847
+      image: quay.io/redhat-appstudio/konflux-test:v1.4.5@sha256:801a105ba0f9c7f58f5ba5cde1a3b4404009fbebb1028779ca2c5de211e94940
       # per https://kubernetes.io/docs/concepts/containers/images/#imagepullpolicy-defaulting
       # the cluster will set imagePullPolicy to IfNotPresent
       securityContext:
@@ -212,10 +194,10 @@ spec:
         TEST_OUTPUT=$(make_result_json -r "SUCCESS" -t "$note")
         echo "${TEST_OUTPUT}" | tee $(results.TEST_OUTPUT.path)
   volumes:
-    - name: trusted-ca
-      configMap:
-        name: $(params.caTrustConfigMapName)
-        items:
-          - key: $(params.caTrustConfigMapKey)
-            path: ca-bundle.crt
-        optional: true
+  - name: trusted-ca
+    configMap:
+      name: $(params.ca-trust-config-map-name)
+      items:
+        - key: $(params.ca-trust-config-map-key)
+          path: ca-bundle.crt
+      optional: true

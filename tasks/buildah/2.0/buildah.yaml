@@ -482,6 +482,8 @@ spec:
         echo "INFO: Using mounted CA bundle: $ca_bundle"
         cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
         update-ca-trust
+        ls -l /etc/pki/ca-trust/source/anchors
+        ls -l /etc/pki/ca-trust/source
       fi
 
       base_image_name=$(buildah inspect --format '{{ index .ImageAnnotations "org.opencontainers.image.base.name"}}' $IMAGE | cut -f1 -d'@')
@@ -542,7 +544,8 @@ spec:
       - $(params.IMAGE)
     volumeMounts:
     - name: trusted-ca
-      mountPath: /etc/ssl/certs
+      mountPath: /etc/ssl/certs/ca-bundle.crt
+      subPath: ca-bundle.crt
       readOnly: true
     workingDir: $(workspaces.source.path)
 

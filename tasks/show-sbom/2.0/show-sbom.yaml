@@ -20,11 +20,11 @@ spec:
         refers to a multi-arch image and this parameter is empty, the task will default to use "linux/amd64".
       type: string
       default: "linux/amd64"
-    - name: caTrustConfigMapName
+    - name: CA_TRUST_CONFIG_MAP_NAME
       type: string
       description: The name of the ConfigMap to read CA bundle data from.
       default: trusted-ca
-    - name: caTrustConfigMapKey
+    - name: CA_TRUST_CONFIG_MAP_KEY
       type: string
       description: The name of the key in the ConfigMap that contains the CA bundle data.
       default: ca-bundle.crt
@@ -40,13 +40,6 @@ spec:
       value: $(params.PLATFORM)
     script: |
       #!/bin/bash
-
-      # ca_bundle=/mnt/trusted-ca/ca-bundle.crt
-      # if [ -f "$ca_bundle" ]; then
-      #   echo "INFO: Using mounted CA bundle: $ca_bundle"
-      #   cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-      #   update-ca-trust
-      # fi
 
       download_sbom_with_retry() {
         status=-1
@@ -84,17 +77,15 @@ spec:
         download_sbom_with_retry " --platform=$PLATFORM "
       fi
     volumeMounts:
-    # - name: trusted-ca
-    #   mountPath: /mnt/trusted-ca
-    #   readOnly: true
     - name: trusted-ca
-      mountPath: /etc/ssl/certs
+      mountPath: /etc/pki/tls/certs/ca-custom-bundle.crt
+      subPath: ca-bundle.crt
       readOnly: true
   volumes:
   - name: trusted-ca
     configMap:
-      name: $(params.caTrustConfigMapName)
+      name: $(params.CA_TRUST_CONFIG_MAP_NAME)
       items:
-        - key: $(params.caTrustConfigMapKey)
+        - key: $(params.CA_TRUST_CONFIG_MAP_KEY)
           path: ca-bundle.crt
       optional: true

@@ -14,7 +14,7 @@ metadata:
     appstudio.openshift.io/component: testrepo
     pipelines.appstudio.openshift.io/type: build
   name: testrepo-on-push
-  namespace: user-ns2
+  namespace: user-ns1
 spec:
   params:
   - name: git-url
@@ -22,7 +22,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/yftacherzog-konflux/user-ns2/my-test-component/testrepo:{{revision}}
+    value: quay.io/yftacherzog-konflux/user-ns1/my-test-component/testrepo:{{revision}}
   - name: dockerfile
     value: Dockerfile
   pipelineSpec:

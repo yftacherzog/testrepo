@@ -13,11 +13,11 @@ spec:
     - name: IMAGE_DIGEST
       description: Image digest.
       type: string
-    - name: caTrustConfigMapName
+    - name: CA_TRUST_CONFIG_MAP_NAME
       type: string
       description: The name of the ConfigMap to read CA bundle data from.
       default: trusted-ca
-    - name: caTrustConfigMapKey
+    - name: CA_TRUST_CONFIG_MAP_KEY
       type: string
       description: The name of the key in the ConfigMap that contains the CA bundle data.
       default: ca-bundle.crt
@@ -28,7 +28,7 @@ spec:
       name: IMAGES_PROCESSED
   steps:
   - name: sbom-json-check
-    image: quay.io/redhat-appstudio/konflux-test:v1.4.3@sha256:75d3e0ada1d07511e6b9342398929fe2690367b33142bf99ecad7dc3bccc3847
+    image: quay.io/redhat-appstudio/konflux-test:v1.4.5@sha256:801a105ba0f9c7f58f5ba5cde1a3b4404009fbebb1028779ca2c5de211e94940
     # per https://kubernetes.io/docs/concepts/containers/images/#imagepullpolicy-defaulting
     # the cluster will set imagePullPolicy to IfNotPresent
     securityContext:
@@ -39,11 +39,9 @@ spec:
     volumeMounts:
       - mountPath: /shared
         name: shared
-      # - name: trusted-ca
-      #   mountPath: /mnt/trusted-ca
-      #   readOnly: true
       - name: trusted-ca
-        mountPath: /etc/ssl/certs
+        mountPath: /etc/pki/tls/certs/ca-custom-bundle.crt
+        subPath: ca-bundle.crt
         readOnly: true
     env:
       - name: IMAGE_URL
@@ -54,14 +52,6 @@ spec:
       #!/usr/bin/env bash
       set -euo pipefail
       source /utils.sh
-
-      # ca_bundle=/mnt/trusted-ca/ca-bundle.crt
-      # if [ -f "$ca_bundle" ]; then
-      #   echo "INFO: Using mounted CA bundle: $ca_bundle"
-      #   cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-      #   update-ca-trust
-      # fi
-
       trap 'handle_error $(results.TEST_OUTPUT.path)' EXIT
 
       images_processed_template='{"image": {"pullspec": "'"$IMAGE_URL"'", "digests": [%s]}}'
@@ -138,8 +128,8 @@ spec:
     emptyDir: {}
   - name: trusted-ca
     configMap:
-      name: $(params.caTrustConfigMapName)
+      name: $(params.CA_TRUST_CONFIG_MAP_NAME)
       items:
-        - key: $(params.caTrustConfigMapKey)
+        - key: $(params.CA_TRUST_CONFIG_MAP_KEY)
           path: ca-bundle.crt
       optional: true

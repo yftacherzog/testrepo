@@ -18,26 +18,28 @@ spec:
     description: Additional tags that will be applied to the image in the registry.
     type: array
     default: []
-  - name: caTrustConfigMapName
+  - name: CA_TRUST_CONFIG_MAP_NAME
     type: string
     description: The name of the ConfigMap to read CA bundle data from.
     default: trusted-ca
-  - name: caTrustConfigMapKey
+  - name: CA_TRUST_CONFIG_MAP_KEY
     type: string
     description: The name of the key in the ConfigMap that contains the CA bundle data.
     default: ca-bundle.crt
+  stepTemplate:
+    volumeMounts:
+      - name: trusted-ca
+        mountPath: /etc/pki/tls/certs/ca-custom-bundle.crt
+        subPath: ca-bundle.crt
+        readOnly: true
   steps:
     - name: apply-additional-tags-from-parameter
-      image: registry.access.redhat.com/ubi9/skopeo:9.4-6@sha256:c4d70dec3eb0a0c831490192145ea25431fe04d1cf307f8d61e2d87adb41e7e3
+      image: registry.access.redhat.com/ubi9/skopeo:9.4-12@sha256:61871ab37e9b1291e3547f36ba692a4dc59c22e9e045a5b4d5bf9a55155ab779
       args:
         - $(params.ADDITIONAL_TAGS[*])
       env:
       - name: IMAGE
         value: $(params.IMAGE)
-      volumeMounts:
-        - name: trusted-ca
-          mountPath: /etc/ssl/certs
-          readOnly: true
       script: |
         #!/bin/bash
 
@@ -52,14 +54,10 @@ spec:
         fi
 
     - name: apply-additional-tags-from-image-label
-      image: registry.access.redhat.com/ubi9/skopeo:9.4-6@sha256:c4d70dec3eb0a0c831490192145ea25431fe04d1cf307f8d61e2d87adb41e7e3
+      image: registry.access.redhat.com/ubi9/skopeo:9.4-12@sha256:61871ab37e9b1291e3547f36ba692a4dc59c22e9e045a5b4d5bf9a55155ab779
       env:
       - name: IMAGE
         value: $(params.IMAGE)
-      volumeMounts:
-        - name: trusted-ca
-          mountPath: /etc/ssl/certs
-          readOnly: true
       script: |
         #!/bin/bash
 
@@ -78,10 +76,10 @@ spec:
           echo "No additional tags specified in the image labels"
         fi
   volumes:
-    - name: trusted-ca
-      configMap:
-        name: $(params.caTrustConfigMapName)
-        items:
-          - key: $(params.caTrustConfigMapKey)
-            path: ca-bundle.crt
-        optional: true
+  - name: trusted-ca
+    configMap:
+      name: $(params.CA_TRUST_CONFIG_MAP_NAME)
+      items:
+        - key: $(params.CA_TRUST_CONFIG_MAP_KEY)
+          path: ca-bundle.crt
+      optional: true

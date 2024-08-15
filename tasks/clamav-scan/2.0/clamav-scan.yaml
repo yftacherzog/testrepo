@@ -23,17 +23,18 @@ spec:
     - name: docker-auth
       description: unused
       default: ""
-    - name: caTrustConfigMapName
+    - name: ca-trust-config-map-name
       type: string
       description: The name of the ConfigMap to read CA bundle data from.
       default: trusted-ca
-    - name: caTrustConfigMapKey
+    - name: ca-trust-config-map-key
       type: string
       description: The name of the key in the ConfigMap that contains the CA bundle data.
       default: ca-bundle.crt
+
   steps:
     - name: extract-and-scan-image
-      image: quay.io/redhat-appstudio/konflux-test:v1.4.3@sha256:75d3e0ada1d07511e6b9342398929fe2690367b33142bf99ecad7dc3bccc3847
+      image: quay.io/redhat-appstudio/konflux-test:v1.4.5@sha256:801a105ba0f9c7f58f5ba5cde1a3b4404009fbebb1028779ca2c5de211e94940
       # per https://kubernetes.io/docs/concepts/containers/images/#imagepullpolicy-defaulting
       # the cluster will set imagePullPolicy to IfNotPresent
       workingDir: /work
@@ -50,10 +51,11 @@ spec:
           value: $(params.image-digest)
       computeResources:
         limits:
-          memory: 4Gi
+          memory: 8Gi
+          cpu: '2'
         requests:
-          memory: 512Mi
-          cpu: 10m
+          memory: 2Gi
+          cpu: 500m
       script: |
         #!/usr/bin/env bash
         set -euo pipefail
@@ -150,10 +152,18 @@ spec:
         - mountPath: /work
           name: work
         - name: trusted-ca
-          mountPath: /etc/ssl/certs
-          # readOnly: true
+          mountPath: /etc/pki/tls/certs/ca-custom-bundle.crt
+          subPath: ca-bundle.crt
+          readOnly: true
     - name: upload
-      image: quay.io/konflux-ci/oras:latest@sha256:1619b84cea3777387f643d7a1ecde98dd10904439f31607e66530cd2299c7b91
+      image: quay.io/konflux-ci/oras:latest@sha256:f4b891ee3038a5f13cd92ff4f473faad5601c2434d1c6b9bccdfc134d9d5f820
+      computeResources:
+        limits:
+          memory: 512Mi
+          cpu: 200m
+        requests:
+          memory: 256Mi
+          cpu: 100m
       env:
         - name: IMAGE_URL
           value: $(params.image-url)
@@ -209,8 +219,8 @@ spec:
       emptyDir: {}
     - name: trusted-ca
       configMap:
-        name: $(params.caTrustConfigMapName)
+        name: $(params.ca-trust-config-map-name)
         items:
-          - key: $(params.caTrustConfigMapKey)
+          - key: $(params.ca-trust-config-map-key)
             path: ca-bundle.crt
         optional: true

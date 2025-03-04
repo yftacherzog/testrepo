@@ -11,8 +11,8 @@ metadata:
       == "main"
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: testrepo
-    appstudio.openshift.io/component: testrepo
+    appstudio.openshift.io/application: test-component
+    appstudio.openshift.io/component: test-component
     pipelines.appstudio.openshift.io/type: build
   name: testrepo-on-push
   namespace: user-ns2
@@ -23,7 +23,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/yftacherzog-konflux/user-ns2/testrepo:{{revision}}
+    value: registry-service.kind-registry/test-component:{{revision}}
   - name: dockerfile
     value: Dockerfile
   pipelineSpec:

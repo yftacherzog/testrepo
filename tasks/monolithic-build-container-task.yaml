@@ -1,0 +1,202 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  labels:
+    app.kubernetes.io/version: "1.0"
+    build.appstudio.redhat.com/build_type: "docker"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/tags: "image-build, konflux, monolithic"
+  name: monolithic-build-container
+  namespace: user-ns2
+spec:
+  description: |-
+    Monolithic container build task that consolidates init, git-clone, prefetch-dependencies,
+    and buildah functionality into a single Go binary for improved performance and maintainability.
+  params:
+  # Git parameters
+  - description: Repository URL to clone from
+    name: git-url
+    type: string
+  - default: ""
+    description: Revision to checkout (branch, tag, sha, ref, etc...)
+    name: revision
+    type: string
+  - default: ""
+    description: Refspec to fetch before checking out revision
+    name: refspec
+    type: string
+  - default: 1
+    description: Perform a shallow clone, fetching only the most recent N commits
+    name: depth
+    type: string
+  - default: "true"
+    description: Initialize and fetch git submodules
+    name: submodules
+    type: string
+
+  # Image parameters
+  - description: Reference of the image to build and push
+    name: IMAGE
+    type: string
+  - default: ./Dockerfile
+    description: Path to the Dockerfile to build
+    name: DOCKERFILE
+    type: string
+  - default: .
+    description: Path to the directory to use as context
+    name: CONTEXT
+    type: string
+  - default: "false"
+    description: Force rebuild image
+    name: rebuild
+    type: string
+  - default: "false"
+    description: Skip checks against built image
+    name: skip-checks
+    type: string
+  - default: "true"
+    description: Verify the TLS on the registry endpoint
+    name: TLSVERIFY
+    type: string
+
+  # Hermetic build parameters
+  - default: "false"
+    description: Execute the build with network isolation
+    name: HERMETIC
+    type: string
+  - default: ""
+    description: Build dependencies to be prefetched by Cachi2
+    name: PREFETCH_INPUT
+    type: string
+  - default: "false"
+    description: Enable in-development package managers for Cachi2
+    name: dev-package-managers
+    type: string
+  - default: "info"
+    description: Set cachi2 log level (debug, info, warning, error)
+    name: log-level
+    type: string
+  - default: ""
+    description: Pass configuration to cachi2 as YAML-formatted config dump
+    name: config-file-content
+    type: string
+
+  # Build configuration
+  - default: ""
+    description: Delete image tag after specified time (1h, 2d, 3w format)
+    name: IMAGE_EXPIRES_AFTER
+    type: string
+  - name: COMMIT_SHA
+    description: The image is built from this commit
+    type: string
+    default: ""
+  - default: []
+    description: Array of --build-arg values ("arg=value" strings) for buildah
+    name: BUILD_ARGS
+    type: array
+  - default: ""
+    description: Path to a file with build arguments for buildah
+    name: BUILD_ARGS_FILE
+    type: string
+
+  results:
+  - description: Defines if the image should be built
+    name: build
+  - description: The precise commit SHA that was fetched
+    name: commit
+  - description: The precise URL that was fetched
+    name: url
+  - description: Digest of the image just built
+    name: IMAGE_DIGEST
+  - description: Image repository and tag where the built image was pushed
+    name: IMAGE_URL
+
+  workspaces:
+  - name: source
+    description: Workspace with the source code
+  - name: git-basic-auth
+    optional: true
+    description: A Workspace containing a .gitconfig and .git-credentials file
+  - name: netrc
+    optional: true
+    description: A Workspace containing a .netrc file
+
+  steps:
+  - name: build
+    image: quay.io/yftacherzog-konflux/monolithic-builder:v33
+    env:
+    # Git configuration
+    - name: GIT_URL
+      value: $(params.git-url)
+    - name: GIT_REVISION
+      value: $(params.revision)
+    - name: GIT_REFSPEC
+      value: $(params.refspec)
+    - name: GIT_DEPTH
+      value: $(params.depth)
+    - name: GIT_SUBMODULES
+      value: $(params.submodules)
+
+    # Image configuration
+    - name: IMAGE_URL
+      value: $(params.IMAGE)
+    - name: DOCKERFILE
+      value: $(params.DOCKERFILE)
+    - name: CONTEXT
+      value: $(params.CONTEXT)
+    - name: REBUILD
+      value: $(params.rebuild)
+    - name: SKIP_CHECKS
+      value: $(params.skip-checks)
+    - name: TLSVERIFY
+      value: $(params.TLSVERIFY)
+
+    # Hermetic build configuration
+    - name: HERMETIC
+      value: $(params.HERMETIC)
+    - name: PREFETCH_INPUT
+      value: $(params.PREFETCH_INPUT)
+    - name: DEV_PACKAGE_MANAGERS
+      value: $(params.dev-package-managers)
+    - name: LOG_LEVEL
+      value: $(params.log-level)
+    - name: CONFIG_FILE_CONTENT
+      value: $(params.config-file-content)
+
+    # Build configuration
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.IMAGE_EXPIRES_AFTER)
+    - name: COMMIT_SHA
+      value: $(params.COMMIT_SHA)
+    - name: BUILD_ARGS_FILE
+      value: $(params.BUILD_ARGS_FILE)
+
+    # Workspace paths
+    - name: WORKSPACE_PATH
+      value: $(workspaces.source.path)
+    - name: RESULTS_PATH
+      value: /tekton/results
+
+    # Authentication paths
+    - name: GIT_AUTH_PATH
+      value: $(workspaces.git-basic-auth.path)
+    - name: NETRC_PATH
+      value: $(workspaces.netrc.path)
+
+    args:
+    - $(params.BUILD_ARGS[*])
+
+    computeResources:
+      limits:
+        memory: 4Gi
+        cpu: "2"
+      requests:
+        memory: 2Gi
+        cpu: "1"
+
+    securityContext:
+      runAsUser: 0
+      capabilities:
+        add:
+        - SETFCAP

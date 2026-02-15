@@ -1,0 +1,78 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  labels:
+    app.kubernetes.io/version: "1.0"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/tags: "image-build, konflux, monolithic"
+  name: monolithic-build-image-index
+  namespace: user-ns2
+spec:
+  description: |-
+    Monolithic image index build task that creates OCI image indexes from built container images
+    with support for multi-architecture builds and proper metadata handling.
+  params:
+  - description: Reference of the image to build index for
+    name: IMAGE
+    type: string
+  - name: COMMIT_SHA
+    description: The commit SHA used for the build
+    type: string
+    default: ""
+  - default: ""
+    description: Delete image tag after specified time (1h, 2d, 3w format)
+    name: IMAGE_EXPIRES_AFTER
+    type: string
+  - default: "false"
+    description: Always build index even for single images
+    name: ALWAYS_BUILD_INDEX
+    type: string
+  - default: ""
+    description: Space-separated images to include in the index (image@digest format)
+    name: IMAGES
+    type: string
+  - default: "true"
+    description: Verify the TLS on the registry endpoint
+    name: TLSVERIFY
+    type: string
+
+  results:
+  - description: Digest of the image index just built
+    name: IMAGE_DIGEST
+  - description: Image repository and tag where the image index was pushed
+    name: IMAGE_URL
+
+  steps:
+  - name: build-index
+    image: quay.io/yftacherzog-konflux/monolithic-builder:v33
+    env:
+    - name: MONOLITHIC_COMMAND
+      value: build-image-index
+    - name: IMAGE
+      value: $(params.IMAGE)
+    - name: COMMIT_SHA
+      value: $(params.COMMIT_SHA)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.IMAGE_EXPIRES_AFTER)
+    - name: ALWAYS_BUILD_INDEX
+      value: $(params.ALWAYS_BUILD_INDEX)
+    - name: IMAGES
+      value: "$(params.IMAGES)"
+    - name: TLSVERIFY
+      value: $(params.TLSVERIFY)
+    - name: RESULTS_PATH
+      value: /tekton/results
+
+    computeResources:
+      limits:
+        memory: 1Gi
+        cpu: "1"
+      requests:
+        memory: 512Mi
+        cpu: 500m
+
+    securityContext:
+      capabilities:
+        add:
+        - SETFCAP

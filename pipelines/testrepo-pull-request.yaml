@@ -15,6 +15,7 @@ metadata:
     appstudio.openshift.io/component: testrepo
     pipelines.appstudio.openshift.io/type: build
   name: testrepo-on-pull-request
+  namespace: user-ns2
 spec:
   params:
     - name: git-url

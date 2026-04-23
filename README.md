@@ -31,7 +31,7 @@ When changes land on the default branch of the updater, a GitHub Actions workflo
 
 1. Copies the repository to a staging tree (excluding updater-only automation such as the mirror scripts and workflow).
 2. Moves Konflux-generated `.tekton/` definitions into `pipelines/` (the layout expected for the public sample).
-3. Removes `metadata.namespace` from Tekton YAML under `pipelines/`.
+3. Removes `metadata.namespace` from Tekton YAML under `pipelines/`, then sets `metadata.namespace: user-ns2` on each `PipelineRun` so copies users paste into a fork match the Kind demo user workspace (`user-ns2` in the Konflux CI docs).
 4. Rewrites `output-image` parameters from Konflux `quay.io/redhat-user-workloads/...` values to the internal-registry style used in the sample (`registry-service.kind-registry/testrepo:…`).
 5. Renames Konflux pipeline files to `pipelines/testrepo-pull-request.yaml` and `pipelines/testrepo-push.yaml`.
 6. Replaces the `main` branch of [konflux-ci/testrepo](https://github.com/konflux-ci/testrepo) with that staging tree (using credentials from repository secrets).

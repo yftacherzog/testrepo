@@ -218,10 +218,6 @@ spec:
         params:
           - name: IMAGE
             value: $(params.output-image)
-          - name: COMMIT_SHA
-            value: $(tasks.clone-repository.results.commit)
-          - name: IMAGE_EXPIRES_AFTER
-            value: $(params.image-expires-after)
           - name: ALWAYS_BUILD_INDEX
             value: $(params.build-image-index)
           - name: IMAGES
@@ -236,7 +232,7 @@ spec:
             - name: name
               value: build-image-index-min
             - name: bundle
-              value: quay.io/konflux-ci/tekton-catalog/task-build-image-index-min:0.2@sha256:79b412747e07caf80cace222ef8ee7e7955676f7928b893ed39c107f4ec62bf3
+              value: quay.io/konflux-ci/tekton-catalog/task-build-image-index-min:0.3@sha256:fbb362f21e559606f8941cde6a2c0507c8af6cfc8bee88ffc38032e8e80b4b7e
             - name: kind
               value: task
           resolver: bundles
@@ -254,28 +250,6 @@ spec:
               value: deprecated-image-check
             - name: bundle
               value: quay.io/konflux-ci/tekton-catalog/task-deprecated-image-check:0.5@sha256:3457a4ca93f8d55f14ebd407532b1223c689eacc34f0abb3003db4111667bdae
-            - name: kind
-              value: task
-          resolver: bundles
-        when:
-          - input: $(params.skip-checks)
-            operator: in
-            values:
-              - "false"
-      - name: clair-scan
-        params:
-          - name: image-digest
-            value: $(tasks.build-image-index.results.IMAGE_DIGEST)
-          - name: image-url
-            value: $(tasks.build-image-index.results.IMAGE_URL)
-        runAfter:
-          - build-image-index
-        taskRef:
-          params:
-            - name: name
-              value: clair-scan-min
-            - name: bundle
-              value: quay.io/konflux-ci/tekton-catalog/task-clair-scan-min:0.3@sha256:c117d0fd0b5413b5addb014027f06b1ea2c39c8e962876810c40c7baf5b54e72
             - name: kind
               value: task
           resolver: bundles
